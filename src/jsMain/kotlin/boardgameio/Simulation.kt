@@ -1,6 +1,18 @@
-package com.caseyjbrooks.babbage
+package com.caseyjbrooks.boardgames.boardgameio
 
+import com.caseyjbrooks.boardgames.obj
 import kotlinx.coroutines.await
+import kotlin.js.Promise
+
+@JsModule("boardgame.io/ai")
+@JsNonModule
+external object BoardgameAis {
+    class RandomBot(game: dynamic)
+    class MCTSBot(game: dynamic)
+
+    fun Step(client: BoardgameApp<*>, bot: dynamic): Promise<*>
+    fun Simulate(config: dynamic): Promise<dynamic>
+}
 
 sealed class SimulationConfig(
     val runs: Int
@@ -8,7 +20,7 @@ sealed class SimulationConfig(
     abstract fun getBot(_game: dynamic, _enumerate: dynamic): dynamic
 }
 
-class RandomBots(
+class RandomBot(
     runs: Int = 1000
 ) : SimulationConfig(runs) {
     override fun getBot(_game: dynamic, _enumerate: dynamic): dynamic {
@@ -18,7 +30,7 @@ class RandomBots(
     }
 }
 
-class AiBots(
+class AiBot(
     runs: Int = 1000,
     val _seed: String = "test",
     val _iterations: Int = 200
@@ -30,16 +42,16 @@ class AiBots(
             iterations = _iterations
             enumerate = _enumerate
         })
-        bot.asDynamic().setOpt("async", true);
+//        bot.asDynamic().setOpt("async", true);
 
         return bot
     }
 }
 
-suspend fun runSimulation(_game: Boardgame, config: SimulationConfig): dynamic {
+suspend fun runSimulation(_game: Boardgame<*>, config: SimulationConfig): dynamic {
     val _enumerate = _game.asDynamic().ai.enumerate
 
-    val client = BoardgameIoClient.Client(
+    val client = BoardgameIo.Client(
         BoardgameApp(
             game = _game
         )
@@ -59,7 +71,7 @@ suspend fun runSimulation(_game: Boardgame, config: SimulationConfig): dynamic {
 
 suspend fun runSimulations(
     config: SimulationConfig,
-    game: () -> Boardgame
+    game: () -> Boardgame<*>
 ): dynamic {
     return (0 until config.runs)
         .map {
